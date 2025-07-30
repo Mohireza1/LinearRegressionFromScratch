@@ -1,5 +1,3 @@
-# ok we have the linear regression model
-# let's create the training model:
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 import matplotlib.pyplot as plt
