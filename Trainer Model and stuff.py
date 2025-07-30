@@ -26,12 +26,6 @@ class DataHandler:
         return iter(self.loader)
 
 
-class SGD:
-    def __init__(self, params, lr=0.01):
-        self.params = params
-        self.lr = lr
-
-
 class TwoFactorLinearRegression:
     def __init__(self, num_features, sigma=0.01, lr=0.01):
         self.num_features = num_features
