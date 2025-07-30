@@ -33,10 +33,6 @@ class LinearRegression:
         self.net.bias.data.fill_(0)
         self.optimizer = torch.optim.SGD(self.net.parameters(), lr=lr)
 
-    def forward(self, X):
-        return self.net(X)
-        print("done")
-
     def loss(self, y_hat, y):
         fn = nn.MSELoss()
         return fn(y_hat, y)
@@ -61,8 +57,7 @@ class Trainer:
             batch_losses = []
             for batch in self.train_data:
                 *inputs, y = batch
-                y_hat = self.model.forward(*inputs)
-                loss = self.model.loss(y_hat, y)
+                loss = self.model.loss(self.model.net(*inputs), y)
                 batch_losses.append(loss.item())
                 self.model.optimizer.zero_grad()
                 loss.backward()
@@ -76,8 +71,7 @@ class Trainer:
             for batch in self.val_data:
                 *inputs, y = batch
                 with torch.no_grad():  # Don't update weights
-                    y_hat = self.model.forward(*inputs)
-                    loss = self.model.loss(y_hat, y)
+                    loss = self.model.loss(self.model.net(*inputs), y)
                     batch_val_losses.append(loss.item())
             avg_val_loss = sum(batch_val_losses) / len(batch_val_losses)
             if epoch > 0:
