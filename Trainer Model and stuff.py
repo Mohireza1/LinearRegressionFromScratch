@@ -58,6 +58,7 @@ class Trainer:
 
     def train(self):
         losses = []
+        val_losses = []
 
         # Start interactive plotting
         plt.ion()
@@ -76,15 +77,32 @@ class Trainer:
 
             avg_loss = sum(batch_losses) / len(batch_losses)
             losses.append(avg_loss)
-            print(f"Epoch {epoch+1}, Loss: {avg_loss:.4f}")
 
-            # Clear and redraw the plot
-            plt.clf()  # Clear previous plot
-            plt.plot(losses, "-.o")
+            # === Validation step ===
+            batch_val_losses = []
+            for batch in self.val_data:
+                *inputs, y = batch
+                with torch.no_grad():  # Don't update weights
+                    y_hat = self.model.forward(*inputs)
+                    loss = self.model.loss(y_hat, y)
+                    batch_val_losses.append(loss.item())
+            avg_val_loss = sum(batch_val_losses) / len(batch_val_losses)
+            if epoch > 0:
+                val_losses.append(avg_val_loss)
+
+            print(
+                f"Epoch {epoch+1}, Train Loss: {avg_loss:.4f}, Val Loss: {avg_val_loss:.4f}"
+            )
+
+            # === Plot both training and validation loss ===
+            plt.clf()
+            plt.plot(range(1, epoch + 2), losses, "-o", label="Train Loss")
+            plt.plot(range(2, epoch + 2), val_losses, "--x", label="Val Loss")
             plt.xlabel("Epoch")
             plt.ylabel("Loss")
-            plt.title("Training Loss Over Epochs")
-
+            plt.title("Training and Validation Loss")
+            plt.xlim(1, 10)
+            plt.legend()
             plt.pause(0.1)
 
         plt.ioff()
