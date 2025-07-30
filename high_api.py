@@ -1,5 +1,7 @@
 import torch
 from torch.utils.data import TensorDataset, DataLoader
+from torch import nn
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -24,29 +26,20 @@ class DataHandler:
         return iter(self.loader)
 
 
-class TwoFactorLinearRegression:
-    def __init__(self, num_features, sigma=0.01, lr=0.01):
-        self.num_features = num_features
-        self.w = torch.normal(0, sigma, (num_features, 1), requires_grad=True)
-        self.b = torch.zeros(1, requires_grad=True)
-        self.params = [self.w, self.b]
-        self.lr = lr
+class LinearRegression:
+    def __init__(self, lr=0.01):
+        self.net = nn.Linear(2, 1)
+        self.net.weight.data.normal_(0, 0.01)
+        self.net.bias.data.fill_(0)
+        self.optimizer = torch.optim.SGD(self.net.parameters(), lr=lr)
 
     def forward(self, X):
-        return X @ self.w + self.b
+        return self.net(X)
+        print("done")
 
     def loss(self, y_hat, y):
-        l = (y_hat - y) ** 2 / 2
-        return l.mean()
-
-    def step(self):
-        for param in self.params:
-            param.data -= self.lr * param.grad.data
-
-    def zero_grad(self):
-        for param in self.params:
-            if param.grad is not None:
-                param.grad.zero_()
+        fn = nn.MSELoss()
+        return fn(y_hat, y)
 
 
 class Trainer:
@@ -71,9 +64,9 @@ class Trainer:
                 y_hat = self.model.forward(*inputs)
                 loss = self.model.loss(y_hat, y)
                 batch_losses.append(loss.item())
-                self.model.zero_grad()
+                self.model.optimizer.zero_grad()
                 loss.backward()
-                self.model.step()
+                self.model.optimizer.step()
 
             avg_loss = sum(batch_losses) / len(batch_losses)
             losses.append(avg_loss)
@@ -104,12 +97,14 @@ class Trainer:
             plt.legend()
             plt.pause(0.1)
 
-        print(self.model.w.flatten().tolist(), self.model.b.item())
+        print(
+            f"[{', '.join(f'{num:.3f}' for num in self.model.net.weight.flatten().tolist())}], {self.model.net.bias.item():.3f}"
+        )
         plt.ioff()
         plt.show()
 
 
-data = DataGenerator(torch.tensor([2.3, 3.4]), 3.4, 1000, noise=0.01)
-model = TwoFactorLinearRegression(2, lr=0.02)
-test = Trainer(data, model, 10, num_train=500, batch_size=32)
-test.train()
+test = LinearRegression(lr=0.02)
+data = DataGenerator(torch.tensor([17.4, 6.9]), 1.2, 1000)
+trainer = Trainer(data, test, 12, num_train=500)
+trainer.train()
